@@ -16,7 +16,7 @@ something to gate merges on.
 """
 
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "cost_engine"))
@@ -27,7 +27,7 @@ from triage import triage_cost_report
 
 
 def main() -> int:
-    end = datetime.utcnow().date()
+    end = datetime.now(timezone.utc).date()
     start = end - timedelta(days=7)
 
     print(f"Fetching real Cost Explorer data: {start} to {end}")
