@@ -5,7 +5,8 @@
       "Sid": "CostDetectiveCIReadOnly",
       "Effect": "Allow",
       "Action": [
-        "ce:GetCostAndUsage"
+        "ce:GetCostAndUsage",
+        "tag:GetResources"
       ],
       "Resource": "*"
     }
