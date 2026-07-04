@@ -1,5 +1,6 @@
 ## AWS Cost Detective
 
+<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/714ffcb6-76e0-446b-bd56-486069ddb5c3" />
 
 
 An AI-augmented AWS cost analysis tool that pulls real billing data from Cost
@@ -49,9 +50,6 @@ periods alone rather than manufacturing urgency where none exists.
 
 
 \## Architecture
-
-<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/9b4fc338-55a0-4b08-b6cd-e23034cb1e2a" />
-
 
 ```
 
