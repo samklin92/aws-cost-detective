@@ -22,7 +22,7 @@ jobs:
         run: pip install -r requirements-dev.txt
 
       - name: Run pytest
-        run: python -m pytest tests/ -v
+        run: python -m pytest tests/ lambda/test_lambda_handler.py -v
 
   smoke-test-live:
     name: Live smoke test (costs ~$0.01 + tokens - push to main only)
@@ -47,3 +47,21 @@ jobs:
           AWS_DEFAULT_REGION: us-east-1
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: python scripts/smoke_test_live.py
+
+  terraform-validate:
+    name: Terraform fmt + validate (no AWS credentials needed)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.5"
+      - name: terraform fmt check
+        run: terraform fmt -check -recursive
+      - name: terraform init (no backend)
+        run: terraform init -backend=false
+      - name: terraform validate
+        run: terraform validate

@@ -32,8 +32,11 @@ resource "aws_lambda_function" "cost_detective_reactive" {
 
   environment {
     variables = {
-      SLACK_WEBHOOK_SSM_PARAM     = var.slack_webhook_ssm_param
-      ANTHROPIC_API_KEY_SSM_PARAM = var.anthropic_api_key_ssm_param
+      SLACK_WEBHOOK_SSM_PARAM             = var.slack_webhook_ssm_param
+      ANTHROPIC_API_KEY_SSM_PARAM         = var.anthropic_api_key_ssm_param
+      WORKLOAD_ACCOUNT_ID                 = var.workload_account_id
+      CROSS_ACCOUNT_ROLE_NAME             = var.cross_account_role_name
+      CROSS_ACCOUNT_EXTERNAL_ID_SSM_PARAM = var.cross_account_external_id_ssm_param
     }
   }
 }

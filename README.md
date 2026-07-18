@@ -85,7 +85,7 @@ python cost_engine/tag_auditor.py
 
 GitHub Actions runs two jobs on every push:
 
-**`test-tools`** (free, every push and PR) — 28 pytest tests across the anomaly detector, the cost fetcher's data model and documented API quirks, the triage layer's JSON parsing, and the tag auditor. Everything mocked — zero AWS or Anthropic calls, ~0.65s runtime.
+**`test-tools`** (free, every push and PR) — 39 pytest tests across the anomaly detector, the cost fetcher's data model and documented API quirks, the triage layer's JSON parsing, and the tag auditor. Everything mocked — zero AWS or Anthropic calls, ~0.65s runtime.
 
 **`smoke-test-live`** (costed, push to `main` only, gated behind `test-tools` passing) — runs the actual pipeline against real Cost Explorer and real Claude, using a dedicated IAM identity scoped to exactly `ce:GetCostAndUsage` and nothing else. Confirms the pipeline still works against the real APIs, not just against mocks — catches live schema drift that unit tests can't.
 
@@ -114,6 +114,39 @@ AWS Budgets (80% actual, 100% forecasted)
 ```
 
 **This was built with a $50/month test threshold, verified end-to-end with a real manual SNS trigger and a real message landing in Slack, then explicitly torn down** — `terraform destroy`, IAM user and keys deleted, SSM secrets deleted — since it was provisioned for verification, not to run unattended as production infrastructure indefinitely. The Terraform and Lambda source (`terraform/`, `lambda/`) remain in this repo; the live AWS resources do not currently exist. Re-deploying requires re-running `terraform apply` after recreating the IAM user and SSM secrets it depends on.
+
+---
+
+## Orphaned resource scanner (steady-state cost detection)
+
+The reactive Budgets path and the anomaly detector are both keyed on CHANGE - a
+cost spike, a budget threshold crossed. Neither one flags a resource sitting at
+a flat, unmoving cost every single day, no matter how expensive it is. A real
+example of exactly this pattern (untagged EBS snapshots and AMIs running
+~$300/month, invisible to anomaly detection because the cost never moved) is
+what prompted this addition.
+
+`cost_engine/orphaned_resource_scanner.py` is a static inventory check, not an
+anomaly detector: unattached EBS snapshots (cross-referenced against live
+volumes and current AMIs, not just "no volume attached"), AMIs with zero
+running instances, unattached Elastic IPs, and load balancers with zero healthy
+targets across every target group.
+
+Runs cross-account via the IAM trust role from the `multi-account-observability`
+project - the same Lambda assumes into a workload account's
+`cross-account-monitoring-reader` role (external-ID gated, read-only
+permissions) rather than requiring standing credentials in every account this
+tool needs to inspect.
+
+Triggered on a schedule (EventBridge, daily by default - `terraform/cross_account_scan.tf`),
+independent of the existing SNS/Budgets-triggered path. Both paths share one
+Lambda (`lambda/handler.py`), branching on event source rather than being two
+separate functions.
+
+**Status: code and tests complete, not yet deployed.** Depends on the
+`multi-account-observability` project's cross-account IAM role, which is live;
+deployment of this Lambda extension itself is pending alongside the rest of
+this repo's infrastructure.
 
 ---
 
@@ -275,24 +308,27 @@ cost_engine/
 ├── triage.py           # Claude: narrates breakdown, explains anomalies
 ├── tag_fetcher.py      # Resource Groups Tagging API calls
 ├── tag_auditor.py      # Deterministic tag-compliance checking
+├── orphaned_resource_scanner.py  # Static inventory check - steady-state cost, not anomaly-based
 └── main.py             # CLI orchestrator
 
-tests/                  # 28 pytest tests, fully mocked, zero AWS/Anthropic cost
+tests/                  # 39 pytest tests, fully mocked, zero AWS/Anthropic cost
 ├── conftest.py
 ├── test_analyzer.py
 ├── test_cost_fetcher.py
 ├── test_triage.py
-└── test_tag_auditor.py
+├── test_tag_auditor.py
+└── test_orphaned_resource_scanner.py
 
 scripts/
 └── smoke_test_live.py  # Real end-to-end check, runs only in CI on push to main
 
-lambda/                 # Reactive Budgets-alerting Lambda (source kept, infra torn down)
+lambda/                 # Reactive Budgets-alerting Lambda + scheduled orphaned-resource scan
 ├── handler.py
 ├── package_lambda.sh
 └── test_lambda_handler.py
 
-terraform/              # Budget, SNS, Lambda, IAM - all as code (currently destroyed)
+terraform/              # Budget, SNS, Lambda, IAM, EventBridge schedule - all as code (currently destroyed)
+└── cross_account_scan.tf  # Cross-account IAM + EventBridge schedule for the orphaned-resource scan
 
 iam/
 └── ci-smoke-test-policy.json

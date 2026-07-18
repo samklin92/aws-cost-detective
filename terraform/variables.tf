@@ -33,3 +33,27 @@ variable "lambda_zip_path" {
   type        = string
   default     = "../lambda/build/cost_detective_reactive.zip"
 }
+
+variable "workload_account_id" {
+  description = "AWS account ID of the workload account the cross-account scan reads from (from the multi-account-observability project)."
+  type        = string
+  default     = "772378124091"
+}
+
+variable "cross_account_role_name" {
+  description = "IAM role name in the workload account that this Lambda assumes for the orphaned-resource scan (created by multi-account-observability)."
+  type        = string
+  default     = "cross-account-monitoring-reader"
+}
+
+variable "cross_account_external_id_ssm_param" {
+  description = "SSM Parameter Store path holding the external ID required to assume the cross-account role (SecureString) - same value set in multi-account-observability's terraform.tfvars."
+  type        = string
+  default     = "/cost-detective/cross-account-external-id"
+}
+
+variable "orphaned_scan_schedule_expression" {
+  description = "EventBridge schedule expression for the orphaned-resource scan - daily by default, since this checks steady-state waste, not fast-moving anomalies."
+  type        = string
+  default     = "rate(1 day)"
+}
