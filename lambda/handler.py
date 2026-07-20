@@ -161,7 +161,7 @@ def _run_budget_alert_analysis() -> dict:
     triage_result = triage_cost_report(report, anomalies)
 
     slack_text = (
-        f":rotating_light: *AWS Budget Alert - Cost Detective Analysis*\n\n"
+        f":rotating_light: *AWS Budget Alert - FinOps Detective Analysis*\n\n"
         f"{triage_result.get('overall_summary', 'No summary available.')}\n\n"
         f"{triage_result.get('breakdown_summary', '')}"
     )

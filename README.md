@@ -1,4 +1,4 @@
-## AWS Cost Detective
+## AWS FinOps Detective
 
 <img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/714ffcb6-76e0-446b-bd56-486069ddb5c3" />
 
